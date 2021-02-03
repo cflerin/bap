@@ -9,6 +9,7 @@ import string
 import itertools
 import time
 import pysam
+import subprocess
 
 from pkg_resources import get_distribution
 from subprocess import call, check_call
@@ -219,7 +220,8 @@ def main(mode, input, output, name, ncores, reference_genome,
 			snake_log_preference = ' &>' + snake_log
 		
 		snakecmd_chr = p.snakemake+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bap2.chr --cores '+ncores+' --config cfp="' + y_s + '" --stats '+snake_stats+snake_log_preference
-		os.system(snakecmd_chr)
+		process = subprocess.Popen([snakecmd_chr],shell=True, executable="/bin/bash")
+		process.wait()
 		
 		# Check to make sure snakemake Processing worked
 		finalBamFile = p.output + "/final/" + p.name + ".bap.bam"
