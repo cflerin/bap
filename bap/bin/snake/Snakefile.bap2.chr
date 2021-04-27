@@ -119,7 +119,8 @@ rule assemble_fragments:
 		l3 = ''' awk -v OFS="\t" '{if($9=="+"){print $1,$2+4,$6+4,$7}else if($9=="-"){print $1,$2-5,$6-5,$7}}' | gzip > ''' # awk to offset Tn5 insertions
 		l4 = output.outbedpe + ") 2> " + output.outlog
 		call_frag_gen = l0 + l1 + l2 + l3 + l4
-		os.system(call_frag_gen)
+		process = subprocess.Popen([call_frag_gen],shell=True, executable="/bin/bash")
+		process.wait()
 
 
 # here, the blacklist is enforced
@@ -135,7 +136,8 @@ rule annotate_fragments:
 		read_bead_file = input.inbedpe.replace(".frag.bedpe.gz", ".read_bead.tsv.gz")
 		temp_anno_bedpe = output.outbedpe.replace(".gz", "")
 		r_call1 = " ".join([R+"script", annotate_fragments_R, blacklistRegionsFile, input.inbedpe, read_bead_file, temp_anno_bedpe, output.outbeadcounts])
-		os.system(r_call1)
+		process = subprocess.Popen([r_call1],shell=True, executable="/bin/bash")
+		process.wait()
 		os.system("gzip " + temp_anno_bedpe)
 
 
@@ -215,7 +217,8 @@ rule compute_bap_stat_chr:
 	run:
 		R_call_frag = R + "script " + fragOverlapChr_R + " " + nc_threshold + " " + input.HQbeads + " " + input.annobedpe + " "
 		R_call_frag = R_call_frag + output.fragrds + " " + output.nc_count + " " + regularize_threshold
-		os.system(R_call_frag)
+		process = subprocess.Popen([R_call_frag],shell=True, executable="/bin/bash")
+		process.wait()
 
 # Collate everything including NCs and bead merges; call knee if needed
 rule determine_barcode_merges:
@@ -233,7 +236,8 @@ rule determine_barcode_merges:
 		# collate chr inference and make a single file
 		rdsdir = outdir + "/temp/frag_overlap"
 		r_call_findDoublets = " ".join([R+"script", determineDoubles_R, rdsdir, input.forKnee, input.HQbeads, output.outcsv, minimum_jaccard_index, name, one_to_one, barcoded_tn5, barcode_prior_file])
-		os.system(r_call_findDoublets)
+		process = subprocess.Popen([r_call_findDoublets],shell=True, executable="/bin/bash")
+		process.wait()
 
 rule reannotate_fragments_get_summary_stats_chr:
 	input:
@@ -244,7 +248,8 @@ rule reannotate_fragments_get_summary_stats_chr:
 		frag_ss = output + "/temp/filt_split/" + "{name}" + "_frag.sumstats.tsv"
 	run:
 		R_call_reanno_ss = " ".join([R+"script", reannoFrags_R, input.annobedpe, input.bc_translate_tsv, output.cleanbedpe, output.frag_ss])
-		os.system(R_call_reanno_ss)
+		process = subprocess.Popen([R_call_reanno_ss],shell=True, executable="/bin/bash")
+		process.wait()
 
 rule reannotate_bam_file:
 	input:
@@ -275,7 +280,8 @@ rule final_bam_merge:
 		merge_parameters = [samtools, "merge", "-@", str(threads_max)] + [output.finalbam] + input.chrOut
 		os.popen("(" + " ".join(merge_parameters) + ")&>" + output.samtools_merge_log_file).read()
 		index_parameters = [samtools, "index", "-@", str(threads_max)] + [output.finalbam]
-		os.system(" ".join(index_parameters))
+		process = subprocess.Popen([" ".join(index_parameters)],shell=True, executable="/bin/bash")
+		process.wait()
 		
 rule final_frag_merge:
 	input:
@@ -311,7 +317,8 @@ rule assemble_basic_QC:
 		
 		# Execute the first half of the QC report -- handle species mixing
 		R_call_reanno_ss = " ".join([R+"script", qcRep1_R, basic_qc_temp, input.mito_qc, output.basic_qc, str(speciesMix)])
-		os.system(R_call_reanno_ss)
+		process = subprocess.Popen([R_call_reanno_ss],shell=True, executable="/bin/bash")
+		process.wait()
 
 rule final_QC_SE:
 	input:
@@ -345,7 +352,8 @@ rule final_QC_SE:
 		
 		# Polish up QC and add additional metrics; make SE if necessary
 		r_callQC = " ".join([R+"script", qc_final_R, input.finalFragsFile, tssFile, peakFileGo, input.qcStatsBasicFile, speciesMixGo, oneToOneGo, input.barcodeTranslateFile])
-		os.system(r_callQC)
+		process = subprocess.Popen([r_callQC],shell=True, executable="/bin/bash")
+		process.wait()
 		
 rule final_knee_call_plot:
 	input:
@@ -360,5 +368,3 @@ rule final_knee_call_plot:
 		kneePlot_R = script_dir + "/bin/R/19_makeKneePlots.R"
 		r_callKneePlot = " ".join([R+"script", kneePlot_R, bapParamsFile, input.beadBarcodesFile, input.implicatedBarcodeFile])
 		os.system(r_callKneePlot)
-
-		

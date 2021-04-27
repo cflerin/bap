@@ -197,7 +197,8 @@ def main(mode, input, output, name, ncores, reference_genome,
 		
 		
 		filt_split_cmd = line1 + line2 + line3 + line4 
-		os.system(filt_split_cmd)
+		process = subprocess.Popen([filt_split_cmd],shell=True, executable="/bin/bash")
+		process.wait()
 
 		#----------------------------------------
 		# Step 2 - Process fragments by Snakemake
@@ -244,7 +245,8 @@ def main(mode, input, output, name, ncores, reference_genome,
 			line3 = ' --bead-barcode ' + p.bead_tag + ' --drop-barcode ' + p.drop_tag + " --dict-file " + dict_file
 			mito_cmd = line1 + line2 + line3
 			
-			os.system(mito_cmd)
+                        process = subprocess.Popen([mito_cmd],shell=True, executable="/bin/bash")
+                        process.wait()
 		
 		
 		#-------------------------------------------------------
